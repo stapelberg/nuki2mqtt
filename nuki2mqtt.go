@@ -22,6 +22,10 @@ var (
 	mqttTopic = flag.String("mqtt_topic",
 		"zkj-nuki/webhook",
 		"MQTT topic for publishing webhook contents")
+
+	mqttAdvancedTopic = flag.String("mqtt_advanced_topic",
+		"zkj-nuki/advancedhook",
+		"MQTT topic for publishing webhook contents")
 )
 
 func nukiBridge() error {
@@ -41,8 +45,21 @@ func nukiBridge() error {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		log.Printf("[bridge] remote: %s, headers: %v, body: %q", r.RemoteAddr, r.Header, string(b))
 
 		mqttClient.Publish(*mqttTopic, 0 /* qos */, true /* retained */, string(b))
+	})
+
+	mux.HandleFunc("/advanced", func(w http.ResponseWriter, r *http.Request) {
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Print(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("[advanced] remote: %s, headers: %v, body: %q", r.RemoteAddr, r.Header, string(b))
+
+		mqttClient.Publish(*mqttAdvancedTopic, 0 /* qos */, true /* retained */, string(b))
 
 		// Nuki Advanced API requires a HTTP 204 response
 		w.WriteHeader(http.StatusNoContent)
