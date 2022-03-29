@@ -43,6 +43,9 @@ func nukiBridge() error {
 		}
 
 		mqttClient.Publish(*mqttTopic, 0 /* qos */, true /* retained */, string(b))
+
+		// Nuki Advanced API requires a HTTP 204 response
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	log.Printf("http.ListenAndServe(%q)", *listenAddress)
